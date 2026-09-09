@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Federated Safe Space — Dashboard</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#131a2e; --panel2:#1a2340; --line:#26304f;
+  --text:#e8ecf8; --muted:#93a0bf; --acc:#5b8cff; --ok:#37c978; --warn:#ffb454; --bad:#ff5d6c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:15px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;min-height:100vh}
+a{color:var(--acc)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:12px 20px;background:rgba(11,16,32,.94);border-bottom:1px solid var(--line)}
+header h1{font-size:18px;font-weight:650}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block}
+.dot.up{background:var(--ok)}
+nav{margin-left:auto;display:flex;gap:6px}
+nav button{background:transparent;border:1px solid var(--line);color:var(--muted);padding:7px 14px;
+  border-radius:8px;cursor:pointer;font-size:14px}
+nav button.active{background:var(--panel2);color:var(--text);border-color:var(--acc)}
+main{max-width:1080px;margin:0 auto;padding:20px}
+.grid{display:grid;gap:14px}
+.cards{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card .k{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em}
+.card .v{font-size:26px;font-weight:700;margin-top:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel h2{font-size:15px;margin-bottom:10px;color:var(--text)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input,textarea,select{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:9px 11px;font:inherit;width:100%}
+textarea{min-height:74px;resize:vertical}
+button.btn{background:var(--acc);border:0;color:#fff;padding:9px 16px;border-radius:8px;cursor:pointer;
+  font-weight:600;font-size:14px}
+button.btn:hover{filter:brightness(1.1)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.ghost:hover{border-color:var(--acc)}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.b-ok{background:rgba(55,201,120,.15);color:var(--ok)}
+.b-warn{background:rgba(255,180,84,.15);color:var(--warn)}
+.b-bad{background:rgba(255,93,108,.15);color:var(--bad)}
+.b-mut{background:rgba(147,160,191,.15);color:var(--muted)}
+.post{border-bottom:1px solid var(--line);padding:12px 2px}
+.post:last-child{border-bottom:0}
+.post .meta{color:var(--muted);font-size:12.5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.post .body{margin:5px 0 8px;white-space:pre-wrap;word-break:break-word}
+.log{font-family:Consolas,monospace;font-size:12.5px;color:var(--muted);max-height:220px;overflow:auto}
+.log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.toastbox{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--acc);
+  padding:10px 14px;border-radius:8px;min-width:220px;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.toast.err{border-left-color:var(--bad)}
+.toast.ok{border-left-color:var(--ok)}
+.hidden{display:none}
+.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--acc);
+  border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.tabs-panel{margin-top:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.card .v{font-size:21px}}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+fieldset{border:0;margin-bottom:10px}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="statusDot" title="API status"></span>
+  <h1>Federated Safe Space</h1>
+  <span class="muted" id="apiBase" style="font-size:12.5px"></span>
+  <nav>
+    <button id="tabFeed" class="active" onclick="showTab('feed')">Feed</button>
+    <button id="tabFed" onclick="showTab('fed')">Federation</button>
+    <button id="tabAbout" onclick="showTab('about')">About</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ FEED ============ -->
+  <section id="panelFeed" class="tabs-panel">
+    <div class="panel" style="margin-bottom:14px" id="authCard">
+      <div id="authForm">
+        <h2>Sign in to post &amp; report</h2>
+        <div class="row">
+          <div style="flex:1;min-width:180px"><label for="username">Username</label>
+            <input id="username" autocomplete="username" placeholder="e.g. alice"></div>
+          <div style="flex:1;min-width:180px"><label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+          <button class="btn" id="btnLogin" onclick="doLogin()">Log in</button>
+          <button class="btn ghost" id="btnRegister" onclick="doRegister()">Register</button>
+        </div>
+        <div class="hint">Registering stores a bcrypt hash — the password is never recoverable. Ticking consent is automatic: this demo account joins the federation.</div>
+      </div>
+      <div id="authOn" class="hidden">
+        <h2>Signed in as <span id="whoami" style="color:var(--acc)"></span></h2>
+        <div class="row"><button class="btn ghost" onclick="logout()">Log out</button>
+        <span class="muted">Your raw text stays on this device in the federated design — only masked model updates leave.</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Share something</h2>
+      <textarea id="postBody" placeholder="What's happening? (in production this text would stay on-device…)"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnPost" onclick="createPost()">Post</button>
+        <button class="btn ghost" onclick="loadFeed()">Refresh feed</button>
+        <span class="muted" id="postHint"></span>
+      </div>
+    </div>
+
+    <div class="panel tabs-panel">
+      <h2>Community feed <span class="muted" style="font-weight:400">(toxicity score from the current model — placeholder scoring for now)</span></h2>
+      <div id="feed"><div class="empty"><span class="spin"></span> Loading feed…</div></div>
+    </div>
+  </section>
+
+  <!-- ============ FEDERATION ============ -->
+  <section id="panelFed" class="tabs-panel hidden">
+    <div class="grid cards">
+      <div class="card"><div class="k">Federation round</div><div class="v" id="stRound">–</div></div>
+      <div class="card"><div class="k">Pending updates</div><div class="v" id="stPending">–</div></div>
+      <div class="card"><div class="k">Users</div><div class="v" id="stUsers">–</div></div>
+      <div class="card"><div class="k">Posts</div><div class="v" id="stPosts">–</div></div>
+      <div class="card"><div class="k">Reports</div><div class="v" id="stReports">–</div></div>
+    </div>
+
+    <div class="two" style="margin-top:14px">
+      <div class="panel">
+        <h2>Global model</h2>
+        <div id="gmBox">…</div>
+        <div class="hint">LAG-PSA: async staleness window · top-k + 8-bit quantization · residual carry-over · norm clipping + DP noise · quorum = 5 updates.</div>
+      </div>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <h2>Activity log</h2>
+          <button class="btn ghost" id="btnPause" onclick="togglePause()">Pause</button>
+        </div>
+        <div class="log" id="log"><div>monitoring started — waiting for rounds…</div></div>
+        <div class="hint">Polls <code>/federation/global-model</code> + <code>/metrics</code> every 3s while this tab is open.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="panelAbout" class="tabs-panel hidden">
+    <div class="panel">
+      <h2>What is this?</h2>
+      <p>A reference platform where a <b>content-moderation model is trained across many devices with federated learning</b> — raw text never leaves the device; only compressed, masked, DP-noised model updates do.</p>
+      <h2 style="margin-top:14px">Data flow</h2>
+      <p class="muted">1. Client pulls the global model when online → 2. trains locally on consented data → 3. clips, top-k compresses, quantizes, masks the update → 4. uploads (residual errors carry over across disconnects) → 5. server aggregates a quorum with DP noise → 6. new global model version is published.</p>
+      <h2 style="margin-top:14px">Demo status</h2>
+      <p class="muted">Protocol mechanics are real. Moderation scoring is a keyword placeholder until the federated model plugs in; simulated clients (docker compose <code>client-sim</code>) send synthetic updates so you can watch rounds aggregate live.</p>
+      <p style="margin-top:14px">Machine-readable API: <a href="/docs">/docs</a> · <a href="/metrics">/metrics</a> · <a href="/federation/global-model">/federation/global-model</a></p>
+    </div>
+  </section>
+</main>
+
+<div class="toastbox" id="toasts" aria-live="polite"></div>
+
+<script>
+"use strict";
+const API = location.protocol.startsWith("http") ? "" : "http://localhost:8000";
+let token = localStorage.getItem("fpsafe_token") || "";
+let me = localStorage.getItem("fpsafe_user") || "";
+let lastRound = null, paused = false;
+
+document.getElementById("apiBase").textContent = API || "same-origin API";
+
+/* ---------- helpers ---------- */
+function toast(msg, cls){
+  const box = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast " + (cls || "");
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+async function api(path, method, body){
+  const headers = {"Content-Type": "application/json"};
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const res = await fetch(API + path, {method: method || "GET", headers,
+    body: body ? JSON.stringify(body) : undefined});
+  if (!res.ok){
+    let d = res.statusText;
+    try { const j = await res.json(); d = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail); } catch(e){}
+    throw new Error(d);
+  }
+  return res.json();
+}
+function esc(s){ const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  for (const [id, key] of [["panelFeed","feed"],["panelFed","fed"],["panelAbout","about"]])
+    document.getElementById(id).classList.toggle("hidden", key !== t);
+  document.getElementById("tabFeed").classList.toggle("active", t === "feed");
+  document.getElementById("tabFed").classList.toggle("active", t === "fed");
+  document.getElementById("tabAbout").classList.toggle("active", t === "about");
+}
+
+/* ---------- auth ---------- */
+function authUi(){
+  document.getElementById("authForm").classList.toggle("hidden", !!token);
+  document.getElementById("authOn").classList.toggle("hidden", !token);
+  document.getElementById("whoami").textContent = me || "?";
+  document.getElementById("postHint").textContent = token ? "" : "log in first";
+}
+async function doLogin(){
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value;
+  if (!u || !p) return toast("Enter username and password", "err");
+  const res = await fetch(API + "/auth/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: new URLSearchParams({username: u, password: p})
+  });
+  if (!res.ok) return toast("Login failed: " + (await res.text()), "err");
+  const j = await res.json();
+  token = j.access_token; me = u;
+  localStorage.setItem("fpsafe_token", token); localStorage.setItem("fpsafe_user", me);
+  authUi(); toast("Logged in as " + u, "ok");
+}
+async function doRegister(){
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value;
+  if (!u || !p) return toast("Enter username and password", "err");
+  try{
+    const j = await api("/auth/register", "POST", {username: u, password: p, consent_federated: true});
+    token = j.token; me = u;
+    localStorage.setItem("fpsafe_token", token); localStorage.setItem("fpsafe_user", me);
+    authUi(); toast("Registered & federated consent given", "ok");
+  }catch(e){ toast("Register failed: " + e.message, "err"); }
+}
+function logout(){
+  token = ""; me = "";
+  localStorage.removeItem("fpsafe_token"); localStorage.removeItem("fpsafe_user");
+  authUi(); toast("Logged out");
+}
+
+/* ---------- feed ---------- */
+function badge(score){
+  if (score === null || score === undefined) return '<span class="badge b-mut">pending</span>';
+  if (score >= 0.75) return `<span class="badge b-bad">high ${score.toFixed(2)}</span>`;
+  if (score >= 0.4)  return `<span class="badge b-warn">flagged ${score.toFixed(2)}</span>`;
+  return `<span class="badge b-ok">ok ${score.toFixed(2)}</span>`;
+}
+async function loadFeed(){
+  const box = document.getElementById("feed");
+  try{
+    const posts = await api("/posts?limit=50");
+    if (!posts.length){
+      box.innerHTML = '<div class="empty">No posts yet — be the first.</div>'; return;
+    }
+    box.innerHTML = posts.map(p => `
+      <div class="post">
+        <div class="meta">#${p.id} · user ${p.author_id} · ${esc((p.created_at || "").replace("T", " ").slice(0, 19))} ${badge(p.toxicity_score)}</div>
+        <div class="body">${esc(p.body)}</div>
+        <button class="btn ghost" onclick="reportPost(${p.id})">⚑ Report</button>
+      </div>`).join("");
+  }catch(e){
+    box.innerHTML = `<div class="empty">Could not load feed: ${esc(e.message)}<br>Is the API running?</div>`;
+  }
+}
+async function createPost(){
+  if (!token) return toast("Log in first", "err");
+  const el = document.getElementById("postBody");
+  const body = el.value.trim();
+  if (!body) return toast("Write something first", "err");
+  try{
+    const j = await api("/posts", "POST", {body});
+    el.value = "";
+    toast(`Posted (#${j.id}) — toxicity ${j.toxicity_score.toFixed(2)}${j.flagged ? " · FLAGGED" : ""}`, j.flagged ? "err" : "ok");
+    loadFeed();
+  }catch(e){ toast("Post failed: " + e.message, "err"); }
+}
+async function reportPost(id){
+  const reason = prompt("Why are you reporting post #" + id + "?");
+  if (!reason) return;
+  if (!token) return toast("Log in first to report", "err");
+  try{
+    const j = await api("/reports", "POST", {post_id: id, reason});
+    toast(`Report #${j.id} filed (${j.status})`, "ok");
+  }catch(e){ toast("Report failed: " + e.message, "err"); }
+}
+
+/* ---------- federation monitor ---------- */
+function logLine(s){
+  const el = document.getElementById("log");
+  const d = document.createElement("div");
+  d.textContent = new Date().toLocaleTimeString() + "  " + s;
+  el.prepend(d);
+  while (el.children.length > 60) el.lastChild.remove();
+}
+async function updateFederation(){
+  try{
+    const gm = await api("/federation/global-model");
+    const mt = await api("/metrics");
+    document.getElementById("stRound").textContent = gm.round;
+    document.getElementById("stPending").textContent = gm.pending_updates;
+    document.getElementById("stUsers").textContent = mt.users;
+    document.getElementById("stPosts").textContent = mt.posts;
+    document.getElementById("stReports").textContent = mt.reports;
+    document.getElementById("gmBox").innerHTML =
+      `Version <b>r${gm.round}</b> · ${gm.n_params.toLocaleString()} parameters · quorum aggregation active`;
+    if (lastRound !== null && gm.round > lastRound)
+      logLine(`round ${gm.round} published (was ${lastRound}) — pending now ${gm.pending_updates}`);
+    if (lastRound === null) logLine(`connected — currently at round ${gm.round}`);
+    lastRound = gm.round;
+    document.getElementById("statusDot").classList.add("up");
+  }catch(e){
+    document.getElementById("statusDot").classList.remove("up");
+    logLine("API unreachable: " + e.message);
+  }
+}
+function togglePause(){
+  paused = !paused;
+  document.getElementById("btnPause").textContent = paused ? "Resume" : "Pause";
+}
+setInterval(() => { if (!paused) updateFederation(); }, 3000);
+
+/* ---------- boot ---------- */
+authUi();
+loadFeed();
+updateFederation();
+setInterval(async () => {
+  try { await api("/health"); document.getElementById("statusDot").classList.add("up"); }
+  catch(e){ document.getElementById("statusDot").classList.remove("up"); }
+}, 10000);
+</script>
+</body>
+</html>

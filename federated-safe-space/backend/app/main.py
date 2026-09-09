@@ -1,8 +1,10 @@
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 import numpy as np
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy import select, func
@@ -14,6 +16,7 @@ from .models import User, Post, Report
 from .federation.lagpsa import LagPsaAggregator, ClientUpdate
 
 N_PARAMS = 100_000  # placeholder flat head size; real size set by the model spec
+BASE_DIR = Path(__file__).resolve().parent
 
 
 @asynccontextmanager
@@ -87,7 +90,8 @@ def create_post(body: PostIn, user=Depends(current_user), db: Session = Depends(
 def list_posts(db: Session = Depends(get_db), limit: int = 50):
     rows = db.scalars(select(Post).order_by(Post.id.desc()).limit(min(limit, 100))).all()
     return [{"id": p.id, "author_id": p.author_id, "body": p.body,
-             "toxicity_score": p.toxicity_score} for p in rows]
+             "toxicity_score": p.toxicity_score,
+             "created_at": p.created_at.isoformat() if p.created_at else None} for p in rows]
 
 
 class ReportIn(BaseModel):
@@ -144,3 +148,9 @@ def metrics(db: Session = Depends(get_db)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    """Web dashboard UI (served by the API itself; no separate server needed)."""
+    return FileResponse(BASE_DIR / "static" / "dashboard.html")

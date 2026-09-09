@@ -28,7 +28,7 @@ protocol loop end-to-end; real on-device training arrives with the mobile client
    ```
 
    The first build downloads the Python and Postgres images — give it a few minutes.
-4. Open the API docs: <http://localhost:8000/docs>
+4. Open the web dashboard: <http://localhost:8000/> — feed, posting, reporting, and a live federation monitor. Machine-readable API docs remain at <http://localhost:8000/docs>.
 5. Watch the federation simulation (3 replicas × 8 virtual clients, 30% dropout):
 
    ```bash
@@ -40,7 +40,7 @@ protocol loop end-to-end; real on-device training arrives with the mobile client
 6. Inspect results in the docs UI:
    - `GET /federation/global-model` → current round, pending updates
    - `GET /metrics` → users / posts / reports / federation round
-7. Try the product flow (in the docs UI: Authorize with your token first):
+7. Try the product flow — easiest in the web dashboard (register → post → report → Federation tab). Raw API equivalent (in the docs UI: Authorize with your token first):
    - `POST /auth/register` `{"username": "me", "password": "secret1", "consent_federated": true}` → copy `token`
    - Click **Authorize**, paste the token
    - `POST /posts` `{"body": "hello world"}` → placeholder toxicity score

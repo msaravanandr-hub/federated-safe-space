@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run API (uvicorn, reload)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": ["app.main:app", "--reload"],
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Run client simulator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/client-sim/simulate.py",
+            "args": ["--api", "http://localhost:8000", "--clients", "8", "--rounds", "5", "--drop-rate", "0.3"],
+            "console": "integratedTerminal"
+        }
+    ]
+}
