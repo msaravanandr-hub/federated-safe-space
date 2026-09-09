@@ -128,6 +128,8 @@ fieldset{border:0;margin-bottom:10px}
       <div class="card"><div class="k">Users</div><div class="v" id="stUsers">–</div></div>
       <div class="card"><div class="k">Posts</div><div class="v" id="stPosts">–</div></div>
       <div class="card"><div class="k">Reports</div><div class="v" id="stReports">–</div></div>
+      <div class="card"><div class="k">Test AUC</div><div class="v" id="stAuc">–</div></div>
+      <div class="card"><div class="k">Test F1</div><div class="v" id="stF1">–</div></div>
     </div>
 
     <div class="two" style="margin-top:14px">
@@ -155,7 +157,7 @@ fieldset{border:0;margin-bottom:10px}
       <h2 style="margin-top:14px">Data flow</h2>
       <p class="muted">1. Client pulls the global model when online → 2. trains locally on consented data → 3. clips, top-k compresses, quantizes, masks the update → 4. uploads (residual errors carry over across disconnects) → 5. server aggregates a quorum with DP noise → 6. new global model version is published.</p>
       <h2 style="margin-top:14px">Demo status</h2>
-      <p class="muted">Protocol mechanics are real. Moderation scoring is a keyword placeholder until the federated model plugs in; simulated clients (docker compose <code>client-sim</code>) send synthetic updates so you can watch rounds aggregate live.</p>
+      <p class="muted">Real federated training: each client trains a logistic-regression toxicity model on its private, label-skewed text partition (numpy, raw text never leaves the client); only top-k compressed, quantized weight deltas travel; the server aggregates with clipping + DP noise and evaluates AUC/F1 on a held-out test set every round — watch the numbers converge live. Simulated clients stand in for phones until the React Native app lands.</p>
       <p style="margin-top:14px">Machine-readable API: <a href="/docs">/docs</a> · <a href="/metrics">/metrics</a> · <a href="/federation/global-model">/federation/global-model</a></p>
     </div>
   </section>
@@ -306,6 +308,9 @@ async function updateFederation(){
     document.getElementById("stUsers").textContent = mt.users;
     document.getElementById("stPosts").textContent = mt.posts;
     document.getElementById("stReports").textContent = mt.reports;
+    const ev = mt.eval || {};
+    document.getElementById("stAuc").textContent = ev.auc ?? "–";
+    document.getElementById("stF1").textContent = ev.f1 ?? "–";
     document.getElementById("gmBox").innerHTML =
       `Version <b>r${gm.round}</b> · ${gm.n_params.toLocaleString()} parameters · quorum aggregation active`;
     if (lastRound !== null && gm.round > lastRound)

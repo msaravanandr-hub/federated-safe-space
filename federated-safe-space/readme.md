@@ -77,12 +77,20 @@ python simulate.py --api http://localhost:8000 --clients 8 --rounds 5 --drop-rat
 - Moderation placeholder: `backend/app/main.py` → `moderation_score` (replaced by the federated model later)
 - DB schema: `backend/app/models.py`; Auth/JWT: `backend/app/auth.py`
 
-## Honest placeholders
+## Real vs. still placeholder
 
-- Moderation score is keyword-based until the federated model plugs in.
-- `N_PARAMS` (100k) is a demo head size; the real model spec changes it.
-- Pairwise masking happens client-side before upload (design note in `lagpsa.py`);
-  the server implements async acceptance, clipping, DP noise, weighted aggregation.
-- Simulated updates are synthetic — the protocol loop is the demo, not learning quality.
+- **Real:** federated training of a logistic-regression toxicity model on real labeled text —
+  a handwritten seed corpus expanded by seeded templates (~600 examples), partitioned non-IID
+  (label-skewed) across clients. Clients train locally with numpy; raw text never leaves the
+  client; only top-k compressed, quantized weight deltas travel through the LAG-PSA pipeline.
+  The server aggregates with clipping + DP noise and evaluates AUC/F1 on a held-out test set
+  every round — watch convergence on the dashboard's Federation tab.
+- **Real:** protocol mechanics — async staleness window, top-k + 8-bit quantization with
+  residual carry-over, pairwise masking (client-side), quorum aggregation, DP noise.
+- **Real:** scoring — `/posts` is scored by the aggregated global model once round 1 exists
+  (keyword bootstrap only before the very first aggregation).
+- **Still placeholder:** training inside the React Native app itself (simulated Docker clients
+  stand in for phones), and corpus scale — for publication-grade results drop the full
+  Jigsaw/Civil Comments CSV into `client-sim/data/` in the same JSON shape.
 
 See `docs/RESEARCH_PAPER_OUTLINE.md` for the paper plan (target journal: *Big Data*, Sage).
