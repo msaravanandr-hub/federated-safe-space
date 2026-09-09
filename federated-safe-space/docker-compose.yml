@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fpsafe
+      POSTGRES_PASSWORD: fpsafe
+      POSTGRES_DB: fpsafe
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://fpsafe:fpsafe@db:5432/fpsafe
+      JWT_SECRET: dev-only-secret-change-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  # Simulated federated clients exercising the LAG-PSA loop against the API
+  # (async acceptance, quorum aggregation with clip + DP). Each replica runs
+  # 8 virtual clients with configurable dropout.
+  client-sim:
+    build: ./client-sim
+    environment:
+      API_URL: "http://api:8000"
+      N_CLIENTS: "8"
+      ROUNDS: "5"
+      DROP_RATE: "0.3"
+    depends_on:
+      - api
+    deploy:
+      replicas: 3
+
+volumes:
+  pgdata:

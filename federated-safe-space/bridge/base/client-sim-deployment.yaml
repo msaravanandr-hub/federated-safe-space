@@ -1,0 +1,38 @@
+#! client-sim-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: client-sim
+    namespace: federated-safe-space
+    labels:
+        com.docker.compose.project: federated-safe-space
+        com.docker.compose.service: client-sim
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: federated-safe-space
+            com.docker.compose.service: client-sim
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: federated-safe-space
+                com.docker.compose.service: client-sim
+                com.docker.compose.network.default: "true"
+        spec:
+            containers:
+                - name: client-sim
+                  image: federated-safe-space-client-sim
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: API_URL
+                      value: "http://api:8000"
+                    - name: DROP_RATE
+                      value: "0.3"
+                    - name: N_CLIENTS
+                      value: "8"
+                    - name: ROUNDS
+                      value: "5"

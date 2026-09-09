@@ -1,0 +1,14 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - 0-federated-safe-space-namespace.yaml
+    - api-deployment.yaml
+    - api-expose.yaml
+    - api-service.yaml
+    - client-sim-deployment.yaml
+    - db-deployment.yaml
+    - db-expose.yaml
+    - db-pgdata-persistentVolumeClaim.yaml
+    - default-network-policy.yaml

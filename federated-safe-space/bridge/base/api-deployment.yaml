@@ -1,0 +1,37 @@
+#! api-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api
+    namespace: federated-safe-space
+    labels:
+        com.docker.compose.project: federated-safe-space
+        com.docker.compose.service: api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: federated-safe-space
+            com.docker.compose.service: api
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: federated-safe-space
+                com.docker.compose.service: api
+                com.docker.compose.network.default: "true"
+        spec:
+            containers:
+                - name: api
+                  image: federated-safe-space-api
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: DATABASE_URL
+                      value: "postgresql+psycopg://fpsafe:fpsafe@db:5432/fpsafe"
+                    - name: JWT_SECRET
+                      value: "dev-only-secret-change-in-production"
+                  ports:
+                    - name: api-8000
+                      containerPort: 8000
